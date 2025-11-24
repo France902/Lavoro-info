@@ -17,13 +17,13 @@ public class TowerDefense {
     // Flag e variabili di stato generali
     public static boolean vinto = false, vittoriaGiocatore;
     public static int contRound = 0, personaggiSchierati = 0, personaggiNemiciSchierati = 0;
-    public static int manaPosseduta = 10, manaAvversario = 10;
+    public static double manaPosseduta = 10, manaAvversario = 10;
     public static boolean condRound = true;
 
     /**
      * Archivio dei personaggi disponibili al giocatore.
      * Ogni entry contiene:
-     * 0 = simbolo multi-riga “formale” (a video nel menu)
+     * 0 = simbolo multi-riga “formale” (a video nel menu personaggi)
      * 1 = simbolo in-linea usato nel rendering della mappa
      * 2 = costo mana
      * 3 = attacco
@@ -32,27 +32,27 @@ public class TowerDefense {
      * 6 = nome/classe del personaggio
      */
     static String[][] logPersonaggi = {
-        {"o\n/|>\n/ \\", "o[/|>[/ \\", "4", "6", "7", "3", "cavaliere"},
+        {"o\n/|>\n/ \\", "o[/|>[/ \\", "5", "6", "7", "3", "cavaliere"},
         {"O\n/|}_\n/ \\", "O[/|}_[/ \\", "3", "4", "8", "4", "barbaro"},
         {"^\n/|\\\n/ \\", "^[/|\\[/ \\", "3", "3", "5", "5", "ninja"},
         {"o\n/|)->\n/ \\", "o[/|)->[/ \\", "2", "4", "4", "3", "lanciere"},
         {"o\n<|>\n/ \\", "o[<|>[/ \\", "4", "4", "5", "4", "assassino"},
-        {"@\n/|\\\n/ \\>", "@[/|\\[/ \\>", "10", "13", "9", "13", "mago"},
+        {"@\n/|\\\n/ \\>", "@[/|\\[/ \\>", "10", "13", "10", "7", "mago"},
     };
 
     // Versione dei personaggi per il team nemico
     static String[][] logPersonaggiNemici = {
-        {"o\n/|>\n/ \\", "o[/|<[\\ /", "4", "6", "7", "3", "cavaliere"},
+        {"o\n/|>\n/ \\", "o[/|<[\\ /", "5", "6", "7", "3", "cavaliere"},
         {"O\n/|}_\n/ \\", "O[/|{_[\\ /", "3", "4", "8", "4", "barbaro"},
-        {"^\n/|\\\n/ \\", "^[/|\\[\\ /", "3", "3", "5", "5", "ninja"},
+        {"^\n/|\\\n/ \\", "^[\\|/[\\ /", "3", "3", "5", "5", "ninja"},
         {"o\n/|)->\n/ \\", "o[/|(-<[\\ /", "2", "4", "4", "3", "lanciere"},
         {"o\n<|>\n/ \\", "o[>|<[\\ /", "4", "4", "5", "4", "assassino"},
-        {"@\n/|\\\n/ \\>", "@[/|\\[\\ /<", "10", "13", "9", "13", "mago"},
+        {"@\n/|\\\n/ \\>", "@[/|\\[\\ /<", "10", "13", "10", "7", "mago"},
     };
 
     static String[][] personaggiNemici;
 
-    public static void main() {
+    public static void main(String[] args) {
 
         // Allocazione della mappa e dei vettori degli oggetti dinamici
         char[][] Mappa = new char[Altezza][Larghezza];
@@ -99,7 +99,7 @@ public class TowerDefense {
                     condRound = true;
                     personaggiNemiciSchierati = 0;
                     personaggiSchierati = 0;
-                    main();
+                    main(args);
                 } else System.exit(0);
                 break;
 
@@ -114,13 +114,22 @@ public class TowerDefense {
     public static void schieraNemici(Vector<Personaggio> Nemici) {
 
         manaAvversario = 10;
+        
+        int maxManaSpendibile = (int) (Math.random() * manaAvversario);
+        
+        manaAvversario -= maxManaSpendibile;
+        
+        manaAvversario += (manaAvversario / 100 * 70);
+        manaAvversario = Math.round(manaAvversario);
+        if(manaAvversario > 10) manaAvversario = 10;
+        else if(manaAvversario < 2) manaAvversario += 4;
 
         // Finché rimane abbastanza mana, continua a generare personaggi random
-        while (manaAvversario > 1) {
+        while (maxManaSpendibile > 1) {
             int numeroRandom = (int)(Math.random() * 6);
             int costoMana = Integer.parseInt(logPersonaggiNemici[numeroRandom][2]);
 
-            if (costoMana <= manaAvversario) {
+            if (costoMana <= maxManaSpendibile) {
 
                 Nemici.add(new Personaggio(
                     65 - (5 * personaggiNemiciSchierati),            // Posizione di spawn
@@ -132,7 +141,7 @@ public class TowerDefense {
                     logPersonaggiNemici[numeroRandom][6]             // Classe
                 ));
 
-                manaAvversario -= costoMana;
+                maxManaSpendibile -= costoMana;
                 personaggiNemiciSchierati++;
             }
         }
@@ -151,9 +160,14 @@ public class TowerDefense {
         long ritardoMillisecondi = 500;  // Ritardo tra gli aggiornamenti della schermata
 
         // Se entrambi i campi sono vuoti, inizia un nuovo round
+        
         if (P.size() == 0 && Nemici.size() == 0) {
             schieraNemici(Nemici);
-            manaPosseduta = 10;
+            manaPosseduta += (manaPosseduta / 100 * 70);
+            manaPosseduta = Math.round(manaPosseduta);
+            if(manaPosseduta > 10) manaPosseduta = 10;
+            else if(manaPosseduta < 3) manaPosseduta += 4;
+            
             condRound = true;
         }
 
@@ -163,18 +177,20 @@ public class TowerDefense {
         // Movimento dei personaggi alleati e interazioni con le torri
         for (int i = 0; i < P.size(); i++) {
 
-            P.get(i).vaiAvanti(3); // Avanza di 3 unità
+            P.get(i).vaiAvanti(P.get(i).getVelocita()); // Avanza di tot unità
 
             for (int j = 0; j < T.size(); j++) {
 
                 if (P.get(i).condMovimento(T.get(j))) {
-                    
-                    String esitoAttacco = T.get(j).rimuoviVita(P.get(i).getAttacco()); // Attacca la torre
+                    int attacco = P.get(i).getAttacco();
+                    if((P.get(i).getVitaMassima() - P.get(i).getVita()) <= (P.get(i).getVitaMassima() / 2)) attacco /= 2;
+                    String esitoAttacco = T.get(j).rimuoviVita(attacco); // Attacca la torre
                     
                     if (esitoAttacco.equals("sconfitta")) {  // Se la vita della torre è scesa a 0 si proclama la vittoria
                         vinto = true;
                         vittoriaGiocatore = true;
                     } else {
+                        P.remove(i);
                         personaggiSchierati--;
                         break;
                     }
@@ -185,13 +201,14 @@ public class TowerDefense {
         // Movimento dei nemici e interazione con le torri
         for (int i = 0; i < Nemici.size(); i++) {
 
-            Nemici.get(i).vaiIndietro(3);
+            Nemici.get(i).vaiIndietro(Nemici.get(i).getVelocita());
 
             for (int j = 0; j < T.size(); j++) {
 
                 if (Nemici.get(i).condMovimento(T.get(j))) {
-
-                    String esitoAttacco = T.get(j).rimuoviVita(Nemici.get(i).getAttacco());
+                    int attacco = Nemici.get(i).getAttacco();
+                    if((Nemici.get(i).getVitaMassima() - Nemici.get(i).getVita()) <= (Nemici.get(i).getVitaMassima() / 2)) attacco /= 2;
+                    String esitoAttacco = T.get(j).rimuoviVita(attacco);
 
                     if (esitoAttacco.equals("sconfitta")) {
                         vinto = true;
@@ -264,8 +281,8 @@ public class TowerDefense {
             int posAlleato = P.get(i).getPos() + 1; // posizione di test per contatto (leggero offset)
             for(j=0;j<Nemici.size();j++) {
                 int posNemico = Nemici.get(j).getPos() - 1; // posizione di test per il nemico (offset opposto)
-                if(posAlleato >= posNemico) {
-                    // Se le posizioni si sovrappongono, avviene il combattimento
+                if((posAlleato - posNemico) > -2) {
+                    // Se le posizioni si sovrappongono o sono vicino almeno di due caselle, avviene il combattimento
                     String esitoScontro = P.get(i).fight(Nemici.get(j));
 
                     // esitoScontro: "vittoria", "sconfitta", o altro (pare pareggio)
@@ -396,7 +413,7 @@ for(i=0;i<Nemici.size();i++) {
 
         // Se siamo nella fase di scelta del round, mostra il mana del giocatore come una sequenza di '0'
         if(condRound) {
-            System.out.print("Mana ");
+            System.out.print("Mana: ");
             for(i=0;i<manaPosseduta;i++) {
                 System.out.print("0");
             }
@@ -405,11 +422,11 @@ for(i=0;i<Nemici.size();i++) {
         // Se è il primo round o siamo nella fase di setup, mostra il menu di scelta iterativamente
         if(contRound == 0 || condRound) {
             while(true) {
-                System.out.println("\n______________________________");
-                System.out.println("__ 1 - Scegli il personagio __");
-                System.out.println("__ 2 - Combatti             __");
-                System.out.println("__ 3 - Esci                 __");
-                System.out.println("______________________________");
+                System.out.println("\n________________________");
+                System.out.println("__ 1 - Schiera truppe __");
+                System.out.println("__ 2 - Combatti       __");
+                System.out.println("__ 3 - Esci           __");
+                System.out.println("________________________");
 
                 scelta = in.nextInt();
 
