@@ -16,6 +16,8 @@ public class Personaggio {
 
     // Quantità di vita attuale del personaggio
     private int vita;
+    
+    private int vitaMassima;
 
     // Velocità di movimento per turno
     private int velocita;
@@ -28,6 +30,7 @@ public class Personaggio {
         this.manaCost = manaCost;
         this.attacco = attacco;
         this.vita = vita;
+        this.vitaMassima = vita;
         this.velocita = velocita;
         this.nome = nome;
     }
@@ -67,6 +70,11 @@ public class Personaggio {
         return vita;
     }
     
+    //Restituisce la vita senza modifiche del danno degli avversari
+    public int getVitaMassima() {
+        return vitaMassima;
+    }
+    
     // Modifica la vita del personaggio
     public void setVita(int vita) {
         this.vita = vita;
@@ -75,6 +83,11 @@ public class Personaggio {
     // Ritorna la forza d'attacco
     public int getAttacco() {
         return attacco;
+    }
+    
+    // Ritorna la velocità del personaggio
+    public int getVelocita() {
+        return velocita;
     }
     
     // Controlla se il personaggio sta toccando o superando una torre
